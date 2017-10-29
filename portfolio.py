@@ -24,7 +24,10 @@ import technicalIndicators as ti
 
 from bokeh.layouts import gridplot
 from bokeh.plotting import figure, show, output_file
-from bokeh.charts import Area
+
+###### NOTE! bokeh.charts was deprecated, will be temporarily removed
+#from bokeh.charts import Area
+
 from bokeh.models import NumeralTickFormatter
 
 import threading
@@ -48,59 +51,8 @@ num_threads = 4
 thread_started = False
 lock = threading.Lock()
 
-
-############## USER IMPLEMENTATION SECTION #############################
-
-# The actual trading algorithm
-#
-# Use the following functions
-# setPositionPercent(key, percent) - To set your position for a stock to a particular percentage of port value
-
-def runAlgorithm(key, params = [], setPositionPercent = order_percent):
-	ratio = 1.00/len(quotes.keys())
-	sma = ti.simpleMovingAverage(getQuotes(key, params[0]))
-	if getCurrent(key)[6] > sma:
-		setPositionPercent(key, ratio)
-	else:
-		setPositionPercent(key, 0)
-
-# Objective Function for forward optimization
-
-def score(param, pricequotes):
-	return 0
-		
-# Initialize
-# Add stocks and benchmark
-# Then populate dat
-
-def init():
-	addBenchmark('INDEXBKK','SET',1)
-	addStock('BKK', 'ADVANC', 0.15)
-	addStock('BKK', 'PTT', 0.15)
-	populateData()
-	pass
-
-# Initialize before optimization
-# Set the number of threads
-# Use this to prepare a list of parameters to be passed in
-#
-# Format: [[param set 1], [param set 2], ..., [param set n]]
-def init_opt():
-	global num_threads
-	
-	num_threads = 4
-	
-	param = []
-	for num in range(5, 41):
-		param.append([num])
-		
-	initThreadStorage(param)
-	
-	return param
-
-################## DO NOT EDIT THIS PART ###########################
-
 ###### GLOBAL VARIABLES
+########## DO NOT EDIT
 
 # quotes
 #
@@ -131,6 +83,17 @@ cash_thread = dict()
 port_value_over_time_thread = dict()
 position_over_time_thread = dict()
 lastActive = currentdate
+
+
+
+
+################## DO NOT EDIT THIS PART ###########################
+# 
+# The part to implement your algorithm is at the end of this file
+# Please scroll past this section
+#
+####################################################################
+
 
 
 
@@ -504,13 +467,14 @@ def runForwardtest(algoMethod):
 	
 	p1.yaxis[0].formatter = NumeralTickFormatter(format="$0")
 	
-	area = Area(position_over_time, x='date', y=position_over_time.keys().remove('date'),title="Allocation", legend="top_left", stack=True,
-            xlabel='Date', ylabel='Value')
-	area.yaxis[0].formatter = NumeralTickFormatter(format="$0")
+	#area = Area(position_over_time, x='date', y=position_over_time.keys().remove('date'),title="Allocation", legend="top_left", stack=True,
+        #    xlabel='Date', ylabel='Value')
+	#area.yaxis[0].formatter = NumeralTickFormatter(format="$0")
 
 	output_file("stocks.html", title="Performance Charts")
 
-	show(gridplot([[p1],[area]], plot_width=1376, plot_height=350))  # open a browser
+	#show(gridplot([[p1],[area]], plot_width=1376, plot_height=350))  # open a browser
+        show(gridplot([[p1]], plot_width=1376, plot_height=350))  # open a browser
 
 # Spawn threads for optimizer
 
@@ -596,6 +560,60 @@ def optimize(algoFunc, listOfParameters):
 	output_file("stocks.html", title="Performance Charts")
 
 	show(gridplot([[p1]], plot_width=1376, plot_height=700))  # open a browser
+
+
+
+
+
+
+############## USER IMPLEMENTATION SECTION #############################
+
+# The actual trading algorithm
+#
+# Use the following functions
+# setPositionPercent(key, percent) - To set your position for a stock to a particular percentage of port value
+
+def runAlgorithm(key, params = [], setPositionPercent = order_percent):
+	ratio = 1.00/len(quotes.keys())
+	sma = ti.simpleMovingAverage(getQuotes(key, 14))
+	if getCurrent(key)[6] > sma:
+		setPositionPercent(key, ratio)
+	else:
+		setPositionPercent(key, 0)
+
+# Objective Function for forward optimization
+
+def score(param, pricequotes):
+	return 0
+		
+# Initialize
+# Add stocks and benchmark
+# Then populate dat
+
+def init():
+	addBenchmark('INDEXBKK','SET',1)
+	addStock('BKK', 'ADVANC', 0.15)
+	addStock('BKK', 'PTT', 0.15)
+	populateData()
+	pass
+
+# Initialize before optimization
+# Set the number of threads
+# Use this to prepare a list of parameters to be passed in
+#
+# Format: [[param set 1], [param set 2], ..., [param set n]]
+def init_opt():
+	global num_threads
+	
+	num_threads = 4
+	
+	param = []
+	for num in range(5, 41):
+		param.append([num])
+		
+	initThreadStorage(param)
+	
+	return param
 
 
 if __name__ == "__main__":
